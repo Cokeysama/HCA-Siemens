@@ -1,3 +1,4 @@
+import time
 from DistMeasures import jaccard_distance
 
 class ClusterNode(object):
@@ -54,10 +55,10 @@ class HierarchicalClustering(object):
                 for j in range(i + 1, n_samples):
                     dist = distMatrix[i][j]
                     distlist.append(({i},{j},dist))
-            self.distsort = sorted(distlist, key=lambda d:d[2])
+            self.distsort = sorted(distlist, key=lambda d:d[2],reverse = True)
 
     def __merge_mix(self):
-        cluster1, cluster2 = self.distsort[0][0], self.distsort[0][1]
+        cluster1, cluster2 = self.distsort[-1][0], self.distsort[-1][1]
         merge_node1,merge_node2 = None,None
         i = 0
         while merge_node1 is None or merge_node2 is None:
@@ -76,15 +77,26 @@ class HierarchicalClustering(object):
     def __update_distsort(self):
         distsort = self.distsort
         new_CL = self.clusters[-1]
-        del_id1, del_id2 = distsort[0][0], distsort[0][1]
+        del_id1, del_id2 = distsort[-1][0], distsort[-1][1]
         for i in range(len(distsort)-1,-1,-1):
             if del_id1 == distsort[i][0] or del_id2 == distsort[i][0] or del_id1 == distsort[i][1] or del_id2 == distsort[i][1]:
                 distsort.pop(i)
+                
         for i in self.clusters[:-1]:
-            dist = self.avglkge(i,new_CL)
-            new_sortitem = (i.samples,new_CL.samples,dist)
-            distsort.append(new_sortitem)
-        self.distsort = sorted(distsort, key=lambda d: d[2])
+            dist = self.avglkge(i, new_CL)
+            new_sortitem = (i.samples, new_CL.samples, dist)
+            left, right = 0, len(distsort) - 1
+            while left <= right:
+                mid = ((right - left) >> 1) + left
+                if distsort[mid][2] == dist:
+                    distsort.insert(mid, new_sortitem)
+                    break
+                elif distsort[mid][2] < dist:
+                    right = mid - 1
+                else:
+                    left = mid + 1
+            else:
+                distsort.insert(right - 1, new_sortitem)
 
 
 
@@ -109,4 +121,7 @@ def main():
 
 
 if __name__ == '__main__':
+    start = time.time()
     main()
+    end = time.time()
+    print('程序执行时间: ', end - start)
